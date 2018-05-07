@@ -7,13 +7,11 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using Newtonsoft.Json;
-using RestSharp;
 
 namespace Maze_Client
 {
     public partial class MazeClient : Form
     {
-
         public string mcState { get; set; }
 
         public int mnPosX { get; set; }
@@ -25,11 +23,11 @@ namespace Maze_Client
       
         public int mnMaxDirections { get; set; }
 
-        public List<string> mllAllDirections = new List<string>();
+        public List<string> mlcAllDirections = new List<string>();
 
-        public List<string> mllResponseList = new List<string>();
+        public List<string> mlcResponseList = new List<string>();
 
-        public List<Position> mloPosition = new List<Position>();     
+        public List<Position> mloPosition = new List<Position>();
 
         /// <summary>
         /// Init the Form
@@ -40,13 +38,16 @@ namespace Maze_Client
 
             LaunchMazeServer();
 
-            mllAllDirections = moDirections.GetPropertiesNameOfClass(moDirections);
+            mlcAllDirections = moDirections.GetPropertiesNameOfClass(moDirections);
 
             mcState = GetState();
             GetPosition();
             GetDirections();
 
-            txtMaxDirections.Text = mnMaxDirections.ToString();               
+            txtMaxDirections.Text = mnMaxDirections.ToString();
+
+            //ThreadStart solveref = new ThreadStart(CallToSolveThread);
+            //Thread solveThread = new Thread(solveref);
         }
 
         private void CallToSolveThread()
@@ -60,26 +61,37 @@ namespace Maze_Client
         /// <returns></returns>
         public string GetState()
         {
-            string strState = null;
-            string strResponse = null;
+            string lcState = null;
+            string lcResponse = null;
 
             // neuen Status abfragen
-            strResponse = RequestGET(Constants.RequestURL + "/state");
+            lcResponse = RequestGET(Constants.RequestURL + "/state");
 
-            mllResponseList.Clear();
-            mllResponseList = ConvertToObject(strResponse);
+            mlcResponseList.Clear();
+            mlcResponseList = ConvertToObject(lcResponse);
 
-            if (mllResponseList.Contains("State"))
+            if (mlcResponseList.Contains("State"))
             {
-                var index = mllResponseList.FindIndex(item => item == "State");
+                var index = mlcResponseList.FindIndex(item => item == "State");
 
-                strState = mllResponseList[index + 1];
-                mcState = strState;
+                lcState = mlcResponseList[index + 1];
+                mcState = lcState;
             }
 
-            txtStateRun.Text = mcState;
-
-            return strState;
+            if (this.txtStateRun.InvokeRequired)
+            {
+                this.txtStateRun.Invoke((MethodInvoker)delegate ()
+                {
+                    this.txtStateRun.Text = mcState;
+                }
+                );
+            }
+            else
+            {
+                this.txtStateRun.Text = mcState;
+            }
+                        
+            return lcState;
         }
 
         /// <summary>
@@ -92,17 +104,17 @@ namespace Maze_Client
             // neue Position abfragen
             cResponse = RequestGET(Constants.RequestURL + "/position");
 
-            mllResponseList.Clear();
-            mllResponseList = ConvertToObject(cResponse);
+            mlcResponseList.Clear();
+            mlcResponseList = ConvertToObject(cResponse);
 
-            if (mllResponseList.Contains("Position"))
+            if (mlcResponseList.Contains("Position"))
             {
                 int index = -1;
-                index = mllResponseList.FindIndex(item => item == "X");
-                mnPosX = Int32.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "X");
+                mnPosX = Int32.Parse(mlcResponseList[index + 1]);
 
-                index = mllResponseList.FindIndex(item => item == "Y");
-                mnPosY = Int32.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "Y");
+                mnPosY = Int32.Parse(mlcResponseList[index + 1]);
             }
 
             moPosition = new Position { PosX = mnPosX, PosY = mnPosY };
@@ -118,27 +130,27 @@ namespace Maze_Client
             // neue Richtungen (Directions) abfragen
             cResponse = RequestGET(Constants.RequestURL + "/directions");
 
-            mllResponseList.Clear();
-            mllResponseList = ConvertToObject(cResponse);
+            mlcResponseList.Clear();
+            mlcResponseList = ConvertToObject(cResponse);
 
-            if (mllResponseList.Contains("North") || mllResponseList.Contains("East") || mllResponseList.Contains("South") || mllResponseList.Contains("West"))
+            if (mlcResponseList.Contains("North") || mlcResponseList.Contains("East") || mlcResponseList.Contains("South") || mlcResponseList.Contains("West"))
             {
                 int index = -1;
 
-                index = mllResponseList.FindIndex(item => item == "North");
-                moDirections.North = Boolean.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "North");
+                moDirections.North = Boolean.Parse(mlcResponseList[index + 1]);
 
-                index = mllResponseList.FindIndex(item => item == "East");
-                moDirections.East = Boolean.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "East");
+                moDirections.East = Boolean.Parse(mlcResponseList[index + 1]);
 
-                index = mllResponseList.FindIndex(item => item == "South");
-                moDirections.South = Boolean.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "South");
+                moDirections.South = Boolean.Parse(mlcResponseList[index + 1]);
 
-                index = mllResponseList.FindIndex(item => item == "West");
-                moDirections.West = Boolean.Parse(mllResponseList[index + 1]);
+                index = mlcResponseList.FindIndex(item => item == "West");
+                moDirections.West = Boolean.Parse(mlcResponseList[index + 1]);
 
                 // Anzahl Wege, Richtungen ausfinden
-                mnMaxDirections = GetMaxDirections(mllResponseList);
+                mnMaxDirections = GetMaxDirections(mlcResponseList);
 
                 // Log  aktuelle Richtungen
                 MoveLogStep();
@@ -193,27 +205,7 @@ namespace Maze_Client
         {
             Launch StarteMaze = new Launch();
             StarteMaze.LaunchMazeServer(Constants.fn, "");
-        }
-
-        /// <summary>
-        /// cmdStart_Click.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void cmdStart_Click(object sender, EventArgs e)
-        {
-            GetReset();
-
-            ThreadStart solveref = new ThreadStart(CallToSolveThread);
-            Thread solveThread = new Thread(solveref);
-            solveThread.Start();                    
-            
-            // MoveLogStep();
-            // MoveOneStep();  //Einzelschritte         
-           
-            // SolveLeftHand(MoveDirection.East);
-            //   SolveRightHand(MoveDirection.East);           
-        }
+        }       
 
         /// <summary>
         /// SolveLeftHand. Solve the Maze-Labyrinth
@@ -240,7 +232,7 @@ namespace Maze_Client
                 Console.WriteLine($"Kommt aus welcher Richtung ? --> {_moveDirection} ");
 
                 // chek all Directions
-                foreach (var item in mllAllDirections)
+                foreach (var item in mlcAllDirections)
                 {
                     var cDirectionTyp = item.ToString();
                     MoveDirection oDirectionObject = MoveDirection.None;
@@ -465,7 +457,7 @@ namespace Maze_Client
         }
 
         /// <summary>
-        /// PositionIsMark.
+        /// PositionIsMark. Is the Direction in Front, already gone through 
         /// </summary>
         /// <param name="_actualPosition"></param>
         /// <param name="_moveDirection"></param>
@@ -492,15 +484,6 @@ namespace Maze_Client
                     Front.PosY = loPosition.PosY - 1;
 
                     lbPositonExit = mloPosition.Exists(x => x.PosX == Front.PosX && x.PosY == Front.PosY);
-
-                    //Back.PosX = loposition.PosX;
-                    //Back.PosY = loposition.PosY + 1;
-
-                    //Left.PosX = loposition.PosX -1;
-                    //Left.PosY = loposition.PosY;
-
-                    //Right.PosX = loposition.PosX + 1;
-                    //Right.PosY = loposition.PosY;
 
                     break;
                 case MoveDirection.East:
@@ -547,6 +530,25 @@ namespace Maze_Client
             }          
         }
 
+
+        /// <summary>
+        /// cmdStart_Click.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cmdStart_Click(object sender, EventArgs e)
+        {
+            GetReset();
+
+            ThreadStart solveref = new ThreadStart(CallToSolveThread);
+            Thread solveThread = new Thread(solveref);
+            solveThread.Start();
+
+
+            // SolveLeftHand(MoveDirection.East);
+            //   SolveRightHand(MoveDirection.East);           
+        }
+
         /// <summary>
         /// cmdStop_Click. Event from Button cmdStop "Stop" 
         /// </summary>
@@ -554,10 +556,9 @@ namespace Maze_Client
         /// <param name="e"></param>
         private void cmdStop_Click(object sender, EventArgs e)
         {
-            
+
         }
-
-
+        
         /// <summary>
         /// cmdSend_Click. Event from Button cmdSend "Send"
         /// </summary>
@@ -597,42 +598,12 @@ namespace Maze_Client
             {
                 cResponseData = RequestGET(lcRequestUri);
 
-                mllResponseList.Clear();
-                mllResponseList = ConvertToObject(cResponseData);
+                mlcResponseList.Clear();
+                mlcResponseList = ConvertToObject(cResponseData);
             }
 
             txtStatus.Text += cResponseData + Environment.NewLine;          
-        }
-
-        /// <summary>
-        /// Konvertiere die ResponseDaten (Member)
-        /// </summary>
-        /// <param name="_response"></param>
-        private List<string> ConvertToObject(string _response)
-        {
-            string lcResponse = _response;
-            List<string> llResponseList = new List<string>();
-
-            // Response umwandlen 
-            if (!_response.Contains("Err"))
-            {
-                JsonTextReader reader = new JsonTextReader(new StringReader(lcResponse));
-                while (reader.Read())
-                {
-                    if (reader.Value != null)
-                    {
-                        /// ToDo  Debug   :: Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
-                        llResponseList.Add(reader.Value.ToString());
-                    }
-                    else
-                    {
-                        /// ToDo  Debug   :: Console.WriteLine("Token: {0}", reader.TokenType);
-                    }
-                }
-            }
-
-            return llResponseList;
-        }
+        }        
 
         /// <summary>
         ///  Request für HTTP Post  
@@ -694,7 +665,7 @@ namespace Maze_Client
                 
                              
                 // LOG: Aufzeichnung wenn ein Reset ausgeführt wird. Keine Rueckmeldung vom Server
-                if (PostURL.ToLower().Contains("reset")) { lcResponseFromServer += ".LOG: Es wurde ein Reset ausgeführt"; }
+                if (PostURL.ToLower().Contains("reset")) { lcResponseFromServer += ".LOG: Es wurde ein Reset ausgeführt" + Environment.NewLine; }
                 if (PostURL.ToLower().Contains("move")) { lcResponseFromServer += $".LOG: Bewegung ausgefuerht = {ClientData} "; }
 
                 return lcResponseFromServer;
@@ -755,22 +726,56 @@ namespace Maze_Client
         }
 
         /// <summary>
+        /// Konvertiere die ResponseDaten (Member)
+        /// </summary>
+        /// <param name="_response"></param>
+        private List<string> ConvertToObject(string _response)
+        {
+            string lcResponse = _response;
+            List<string> llResponseList = new List<string>();
+
+            // Response umwandlen 
+            if (!_response.Contains("Err"))
+            {
+                JsonTextReader reader = new JsonTextReader(new StringReader(lcResponse));
+                while (reader.Read())
+                {
+                    if (reader.Value != null)
+                    {
+                        llResponseList.Add(reader.Value.ToString());
+                    }
+                    else
+                    {
+                        /// ToDo  Debug   :: Console.WriteLine("Token: {0}", reader.TokenType);
+                    }
+                }
+            }
+
+            return llResponseList;
+        }
+
+
+        /// <summary>
         /// MoveLogStep. Log-Information over the Step
         /// </summary>
         public void MoveLogStep()
         {
-            string strMoveLog = null;
+            string lcMoveLog = null;
 
-            //////string txtVeraenderung = GetDifferenzDirections().ToString();
-
-            //////if (!txtVeraenderung.Contains(MoveDirection.None.ToString()))
-            //////{
-            //////    debugOutput($"Veränderung: {txtVeraenderung} , Pos: X={mnPosX} Y={mnPosY} ");
-            //////}
-
-            strMoveLog = "Pos: X=" + mnPosX + ", Y=" + mnPosY + " // State: " + mcState + " // Dir: " + moDirections.ToString();
-
-            //// thread // txtMovement.Text += strMoveLog + Environment.NewLine;
+            lcMoveLog = "Pos: X=" + mnPosX + ", Y=" + mnPosY + " // State: " + mcState + " // Dir: " + moDirections.ToString();
+                         
+            if (this.txtMovement.InvokeRequired)
+            {
+                this.txtMovement.Invoke((MethodInvoker)delegate ()
+                {
+                    this.txtMovement.Text = lcMoveLog;
+                }
+                );
+            }
+            else
+            {
+                this.txtMovement.Text = lcMoveLog;
+            } 
         }
 
 
@@ -820,6 +825,8 @@ namespace Maze_Client
 
         }
 
+        #region MOVE MANUAL
+    
         /// <summary>
         /// MoveNorth. Move one Step up (manuel)
         /// </summary>
@@ -906,6 +913,8 @@ namespace Maze_Client
             GetDirections();
         }
 
+        #endregion MOVE MANUAL
+
         /// <summary>
         /// ReverseDirection. 
         /// </summary>
@@ -974,67 +983,46 @@ namespace Maze_Client
             }
         }
 
+        #endregion
+
         private void cmdReset_Click(object sender, EventArgs e)
         {
             GetReset();
         }
-        
+
         private void cmdNorth_Click(object sender, EventArgs e)
         {
-            MoveNorth();
+            if (!(mcState.Contains("Target") || mcState.Contains("Failed"))) 
+            {
+                MoveNorth();
+            }
         }
+
 
         private void cmdWest_Click(object sender, EventArgs e)
         {
-            MoveWest();      
+            if (!(mcState.Contains("Target") || mcState.Contains("Failed")))
+            {
+                MoveWest();
+            }                 
         }
 
         private void cmdEast_Click(object sender, EventArgs e)
         {
-            MoveEast();
+            if (!(mcState.Contains("Target") || mcState.Contains("Failed")))
+            {
+                MoveEast();
+            }          
         }
 
         private void cmdSouth_Click(object sender, EventArgs e)
         {
-            MoveSouth();
+            if (!(mcState.Contains("Target") || mcState.Contains("Failed")))
+            {
+                MoveSouth();
+            }           
         }
 
-
-
-        #endregion
-
-        //BackgroundWorker bw = new BackgroundWorker();
-
-        //// this allows our worker to report progress during work
-        //bw.WorkerReportsProgress = true;
-
-        //// what to do in the background thread
-        //bw.DoWork += new DoWorkEventHandler(
-        //delegate (object o, DoWorkEventArgs args)
-        //{
-        //    BackgroundWorker b = o as BackgroundWorker;
-                
-        //    SolveLeftHand(MoveDirection.East);
-
-        //});
-
-        //// what to do when progress changed (update the progress bar for example)
-        //bw.ProgressChanged += new ProgressChangedEventHandler(
-        //delegate (object o, ProgressChangedEventArgs args)
-        //{
-        //    label6.Text = string.Format("{0}% Completed", args.ProgressPercentage);
-        //});
-
-        //// what to do when worker completes its task (notify the user)
-        //bw.RunWorkerCompleted += new RunWorkerCompletedEventHandler(
-        //delegate (object o, RunWorkerCompletedEventArgs args)
-        //{
-        //    label1.Text = "Finished!";
-        //});
-
-        //bw.RunWorkerAsync();        
-
     }
-
 }
        
