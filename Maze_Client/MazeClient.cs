@@ -59,7 +59,9 @@ namespace Maze_Client
         /// <summary>
         /// mbRunningSolve. Need because to Stop the Solve
         /// </summary>
-        private bool mbRunningSolve = false;        
+        private bool mbRunningSolve = false;
+
+        private bool mbNotBreakLabyrinth = true;
 
         /// <summary>
         /// Init the Form
@@ -84,7 +86,24 @@ namespace Maze_Client
         /// </summary>
         private void CallToSolveThread()
         {
-            SolveLeftHand(MoveDirection.East);
+
+            while (mbNotBreakLabyrinth == true)
+            {
+                mbNotBreakLabyrinth = SolveLeftHand(MoveDirection.East);
+            }
+
+            
+            //TEST();         
+        }
+
+        private bool TEST()
+        {
+            while (mbNotBreakLabyrinth == true)
+            {
+                mbNotBreakLabyrinth = SolveLeftHand(MoveDirection.East);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -120,12 +139,27 @@ namespace Maze_Client
                     {
                         this.txtStateRun.BackColor = System.Drawing.Color.GreenYellow;
                     }
+
+                    if(mcState.Contains("Failed"))
+                    {
+                        this.txtStateRun.BackColor = System.Drawing.Color.Red;
+                    }                   
                 }
                 );
             }
             else
             {
                 this.txtStateRun.Text = mcState;
+
+                if (mcState.Contains("Target"))
+                {
+                    this.txtStateRun.BackColor = System.Drawing.Color.GreenYellow;
+                }
+
+                if (mcState.Contains("Failed"))
+                {
+                    this.txtStateRun.BackColor = System.Drawing.Color.Red;
+                }
             }
                         
             return lcState;
@@ -224,9 +258,11 @@ namespace Maze_Client
         {
             // Werte, Variablen zurücksetzen
             txtStatus.Text = string.Empty;
-            txtStateRun.BackColor = System.Drawing.Color.White;
+            txtStateRun.BackColor = System.Drawing.Color.White;           
             txtMovement.Text = String.Empty;
             mloPosition.Clear();
+            mbNotBreakLabyrinth= true;
+
 
             // Reset ausführen
             string cRequestUri = Constants.RequestURL + "/Reset";
@@ -260,93 +296,97 @@ namespace Maze_Client
             MoveDirection loLeftSide = RotateDirection(loInFront, false);        
             Boolean lbWallNotInFront = moDirections.GetValue(loInFront);
             Boolean lbWallNotLefSide = moDirections.GetValue(loLeftSide);     
-            Boolean lbPositonExit = false;            
+            Boolean lbPositonExit = false;
+                       
 
             // Have we reached the end ? ::1
-            if (mcState.Contains("Target") || mbRunningSolve == false)
+            if (mcState.Contains("Target") || mcState.Contains("Failed") || mbRunningSolve == false)
             {
-                return false;
+                mbNotBreakLabyrinth = false;
+                return false;               
             }
 
-            // Special Conditions. Check if already gone trough, and Freeway
-            if (mnMaxDirections > 2)
+            if(mbNotBreakLabyrinth == true)
             {
-                Console.WriteLine($"Kommt aus welcher Richtung ? --> {_moveDirection} ");
-
-                // chek all Directions
-                foreach (var item in mlcAllDirections)
+                // Special Conditions. Check if already gone trough, and Freeway
+                if (mnMaxDirections > 2)
                 {
-                    var lcDirectionTyp = item.ToString();
-                    MoveDirection oDirectionObject = MoveDirection.None;
-                    Enum.TryParse<MoveDirection>(lcDirectionTyp, out oDirectionObject);
-                    bool lbIsFree = WayIsFree(oDirectionObject);
-                    bool lbIsMark = PositionIsMark(moPosition, oDirectionObject);
+                    Console.WriteLine($"Kommt aus welcher Richtung ? --> {_moveDirection} ");
 
-                    Console.WriteLine($"Richtung  =   {oDirectionObject}   Frei = {lbIsFree}   Bekannkt = {lbIsMark} ");
-
-                    // When is don't mark go 
-                    if (lbIsFree && !lbIsMark && (oDirectionObject == loInFront))
+                    // chek all Directions
+                    foreach (var item in mlcAllDirections)
                     {
-                        //Step forward
-                        MoveMaze(loInFront);
+                        var lcDirectionTyp = item.ToString();
+                        MoveDirection oDirectionObject = MoveDirection.None;
+                        Enum.TryParse<MoveDirection>(lcDirectionTyp, out oDirectionObject);
+                        bool lbIsFree = WayIsFree(oDirectionObject);
+                        bool lbIsMark = PositionIsMark(moPosition, oDirectionObject);
 
-                        // Recalls method 
-                        SolveLeftHand(loInFront);
+                        Console.WriteLine($"Richtung  =   {oDirectionObject}   Frei = {lbIsFree}   Bekannkt = {lbIsMark} ");
+
+                        // When is don't mark go 
+                        if (lbIsFree && !lbIsMark && (oDirectionObject == loInFront))
+                        {
+                            //Step forward
+                            MoveMaze(loInFront);
+
+                            // Recalls method 
+                            SolveLeftHand(loInFront);
+                        }
+
+                        if (lbIsFree && !lbIsMark)
+                        {
+                            //Step forward
+                            MoveMaze(oDirectionObject);
+
+                            // Recalls method 
+                            SolveLeftHand(oDirectionObject);
+                        }
                     }
-
-                    if (lbIsFree && !lbIsMark)
-                    {
-                        //Step forward
-                        MoveMaze(oDirectionObject);
-
-                        // Recalls method 
-                        SolveLeftHand(oDirectionObject);
-                    }
+                    Console.WriteLine($"Alle Richtungen untersucht:      !!! ");
                 }
-                Console.WriteLine($"Alle Richtungen untersucht:      !!! ");
-            }
 
-            // There is no Left wall  ::2
-            if (lbWallNotLefSide == true)  
-            {              
-                // Counter Clockwise 90 deg(CCW)  West --> CCW = South
-                loLeftSide = RotateDirection(loInFront, false);
-                
-                //Step forward
-                MoveMaze(loLeftSide);
-
-                // Recalls method 
-                SolveLeftHand(loLeftSide);
-            }
-
-            // There is no front wall  ::3
-            if (lbWallNotInFront == true)
-            {
-                // ueberprüfen ob schon gewesen           
-                lbPositonExit = mloPosition.Exists(x => x.PosX == mnPosX && x.PosY == mnPosY);
-                
-                if (!lbPositonExit)
+                // There is no Left wall  ::2
+                if (lbWallNotLefSide == true)
                 {
-                    mloPosition.Add(new Position { PosX = mnPosX, PosY = mnPosY });
-                }             
+                    // Counter Clockwise 90 deg(CCW)  West --> CCW = South
+                    loLeftSide = RotateDirection(loInFront, false);
 
-                //Step forward
-                MoveMaze(loInFront);
+                    //Step forward
+                    MoveMaze(loLeftSide);
 
-                // Recalls method 
-                SolveLeftHand(loInFront);
+                    // Recalls method 
+                    SolveLeftHand(loLeftSide);
+                }
+
+                // There is no front wall  ::3
+                if (lbWallNotInFront == true)
+                {
+                    // ueberprüfen ob schon gewesen           
+                    lbPositonExit = mloPosition.Exists(x => x.PosX == mnPosX && x.PosY == mnPosY);
+
+                    if (!lbPositonExit)
+                    {
+                        mloPosition.Add(new Position { PosX = mnPosX, PosY = mnPosY });
+                    }
+
+                    //Step forward
+                    MoveMaze(loInFront);
+
+                    // Recalls method 
+                    SolveLeftHand(loInFront);
+                }
+                else
+                {
+                    // Rotate CW 90 deg
+                    loInFront = RotateDirection(loInFront, true);
+
+                    // Recalls method 
+                    SolveLeftHand(loInFront);
+                }
             }
-            else
-            {
-                // Rotate CW 90 deg
-                loInFront = RotateDirection(loInFront, true);
 
-                // Recalls method 
-                SolveLeftHand(loInFront);
-            }
-
-            return false;
-
+            return true; //lbNotBreakLabyrinth = true;
         }
 
         /// <summary>
@@ -582,7 +622,9 @@ namespace Maze_Client
 
             ThreadStart solveref = new ThreadStart(CallToSolveThread);
             Thread solveThread = new Thread(solveref);
-            solveThread.Start();         
+            solveThread.Start();
+
+            ///SolveLeftHand(MoveDirection.East);           
         }
 
         /// <summary>
