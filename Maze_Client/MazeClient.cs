@@ -29,6 +29,8 @@ namespace Maze_Client
 
         public List<Position> mloPosition = new List<Position>();
 
+        private bool mbRunningSolve = false;        
+
         /// <summary>
         /// Init the Form
         /// </summary>
@@ -52,7 +54,7 @@ namespace Maze_Client
 
         private void CallToSolveThread()
         {
-            SolveLeftHand(MoveDirection.East);           
+            SolveLeftHand(MoveDirection.East);
         }
 
         /// <summary>
@@ -221,7 +223,7 @@ namespace Maze_Client
             Boolean lbPositonExit = false;            
 
             // Have we reached the end ? ::1
-            if (mcState.Contains("Target"))
+            if (mcState.Contains("Target") || mbRunningSolve == false)
             {
                 return false;
             }
@@ -538,15 +540,19 @@ namespace Maze_Client
         /// <param name="e"></param>
         private void cmdStart_Click(object sender, EventArgs e)
         {
-            GetReset();
+            // GetReset(); // aktivieren wenn immer ein Sicher Start gewünscht
+
+            mbRunningSolve = true;
 
             ThreadStart solveref = new ThreadStart(CallToSolveThread);
             Thread solveThread = new Thread(solveref);
             solveThread.Start();
+         
+        }
 
-
-            // SolveLeftHand(MoveDirection.East);
-            //   SolveRightHand(MoveDirection.East);           
+        public void stopThread()
+        {
+            mbRunningSolve = false;
         }
 
         /// <summary>
@@ -556,7 +562,8 @@ namespace Maze_Client
         /// <param name="e"></param>
         private void cmdStop_Click(object sender, EventArgs e)
         {
-
+            mbRunningSolve = false;
+            stopThread();
         }
         
         /// <summary>
