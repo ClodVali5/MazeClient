@@ -40,10 +40,10 @@ namespace Maze_Client
 
             LaunchMazeServer();
 
+            mllAllDirections = moDirections.GetPropertiesNameOfClass(moDirections);
+
             mcState = GetState();
-
             GetPosition();
-
             GetDirections();
 
             txtMaxDirections.Text = mnMaxDirections.ToString();               
@@ -51,8 +51,7 @@ namespace Maze_Client
 
         private void CallToSolveThread()
         {
-            ///// SolveLeftHand(MoveDirection.East);
-           
+            SolveLeftHand(MoveDirection.East);           
         }
 
         /// <summary>
@@ -173,7 +172,8 @@ namespace Maze_Client
         {
             // Werte, Variablen zurücksetzen
             txtStatus.Text = string.Empty;
-            txtMovement.Text = String.Empty;          
+            txtMovement.Text = String.Empty;
+            mloPosition.Clear();
 
             // Reset ausführen
             string cRequestUri = Constants.RequestURL + "/Reset";
@@ -202,43 +202,18 @@ namespace Maze_Client
         /// <param name="e"></param>
         private void cmdStart_Click(object sender, EventArgs e)
         {
+            GetReset();
+
             ThreadStart solveref = new ThreadStart(CallToSolveThread);
             Thread solveThread = new Thread(solveref);
             solveThread.Start();                    
             
             // MoveLogStep();
-            // MoveOneStep();  //Einzelschritte
-          
-            mloPosition.Clear();           
-
-            mllAllDirections = moDirections.GetPropertiesNameOfClass(moDirections);
+            // MoveOneStep();  //Einzelschritte         
            
-            ////////moPosition = new Position { PosX = 0, PosY = 0 };
-            ////////Position ActualPos = new Position { PosX = mnPosX, PosY = mnPosY };
-
-
-            // 1. //  SolveLeftHand(MoveDirection.East);
-
-            // 2. //   SolveCompleteMaze(ActualPos);
-
-            //SolveCompleteMaze(ActualPos);          
-
-            ///// SolveMaze(ActualPos);
-            
-            ///// SolveCompleteMaze(ActualPos);
-
-            /////    SolveCompleteMazeV2(MoveDirection.South);
-
-
-            SolveLeftHand(MoveDirection.East);
-            ///SolveRightHand(MoveDirection.East);
-
-
-            ////// RecursiveSolveAll(MoveDirection.East);
-
-            var test = true;
+            // SolveLeftHand(MoveDirection.East);
+            //   SolveRightHand(MoveDirection.East);           
         }
-
 
         /// <summary>
         /// SolveLeftHand. Solve the Maze-Labyrinth
@@ -836,8 +811,7 @@ namespace Maze_Client
             cResponseData = RequestPOST(cPostData, cRequestUri);
 
             // Log Informationen  ToDo
-            ///Thread ::  
-            txtStatus.Text += cResponseData + Environment.NewLine;
+            ///Thread ::    txtStatus.Text += cResponseData + Environment.NewLine;
 
             // Info sammeln
             GetState();
