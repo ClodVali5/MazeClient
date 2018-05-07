@@ -46,10 +46,7 @@ namespace Maze_Client
             GetPosition();
             GetDirections();
 
-            txtMaxDirections.Text = mnMaxDirections.ToString();
-
-            //ThreadStart solveref = new ThreadStart(CallToSolveThread);
-            //Thread solveThread = new Thread(solveref);
+            txtMaxDirections.Text = mnMaxDirections.ToString();          
         }
 
         private void CallToSolveThread()
@@ -85,6 +82,11 @@ namespace Maze_Client
                 this.txtStateRun.Invoke((MethodInvoker)delegate ()
                 {
                     this.txtStateRun.Text = mcState;
+                    
+                    if(mcState.Contains("Target"))
+                    {
+                        this.txtStateRun.BackColor = System.Drawing.Color.GreenYellow;
+                    }
                 }
                 );
             }
