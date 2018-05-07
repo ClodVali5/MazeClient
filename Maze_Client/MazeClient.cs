@@ -12,23 +12,53 @@ namespace Maze_Client
 {
     public partial class MazeClient : Form
     {
+        /// <summary>
+        /// mcState. Give the Status of the Position in the Labyrinth
+        /// </summary>
         public string mcState { get; set; }
 
+        /// <summary>
+        /// mnPosX. For actual Position. X-Kordinate
+        /// </summary>
         public int mnPosX { get; set; }
+        /// <summary>
+        /// mnPos>. For actual Position. Y-Kordinate
+        /// </summary>
         public int mnPosY { get; set; }
 
-        Position moPosition = null;    
+        /// <summary>
+        /// moPosition. For a actual Position
+        /// </summary>
+        Position moPosition = null;
 
+        /// <summary>
+        /// moDirections. 
+        /// </summary>
         public Direction moDirections = new Direction();
-      
+
+        /// <summary>
+        /// mnMaxDirections. Give the number of Directions, how are free
+        /// </summary>
         public int mnMaxDirections { get; set; }
 
+        /// <summary>
+        /// mlcAllDirections. Is a List of all Directions
+        /// </summary>
         public List<string> mlcAllDirections = new List<string>();
 
+        /// <summary>
+        /// mlcResponseList. Data from WEB-Request (List of String)
+        /// </summary>
         public List<string> mlcResponseList = new List<string>();
 
+        /// <summary>
+        /// mloPosition. List from all visited Position
+        /// </summary>
         public List<Position> mloPosition = new List<Position>();
 
+        /// <summary>
+        /// mbRunningSolve. Need because to Stop the Solve
+        /// </summary>
         private bool mbRunningSolve = false;        
 
         /// <summary>
@@ -49,6 +79,9 @@ namespace Maze_Client
             txtMaxDirections.Text = mnMaxDirections.ToString();          
         }
 
+        /// <summary>
+        /// CallToSolveThread. method for Thread execution
+        /// </summary>
         private void CallToSolveThread()
         {
             SolveLeftHand(MoveDirection.East);
@@ -137,7 +170,10 @@ namespace Maze_Client
             mlcResponseList.Clear();
             mlcResponseList = ConvertToObject(cResponse);
 
-            if (mlcResponseList.Contains("North") || mlcResponseList.Contains("East") || mlcResponseList.Contains("South") || mlcResponseList.Contains("West"))
+            if (mlcResponseList.Contains(MoveDirection.North.ToString()) || 
+                mlcResponseList.Contains(MoveDirection.East.ToString()) ||
+                mlcResponseList.Contains(MoveDirection.South.ToString()) ||
+                mlcResponseList.Contains(MoveDirection.West.ToString()))
             {
                 int index = -1;
 
@@ -188,6 +224,7 @@ namespace Maze_Client
         {
             // Werte, Variablen zurücksetzen
             txtStatus.Text = string.Empty;
+            txtStateRun.BackColor = System.Drawing.Color.White;
             txtMovement.Text = String.Empty;
             mloPosition.Clear();
 
@@ -197,6 +234,7 @@ namespace Maze_Client
                       
             txtStatus.Text = RequestPOST(cPostData, cRequestUri);        
 
+            // Info sammeln
             mcState = GetState();
             GetPosition();
             GetDirections();
@@ -230,7 +268,7 @@ namespace Maze_Client
                 return false;
             }
 
-            // Special Conditions
+            // Special Conditions. Check if already gone trough, and Freeway
             if (mnMaxDirections > 2)
             {
                 Console.WriteLine($"Kommt aus welcher Richtung ? --> {_moveDirection} ");
@@ -238,15 +276,15 @@ namespace Maze_Client
                 // chek all Directions
                 foreach (var item in mlcAllDirections)
                 {
-                    var cDirectionTyp = item.ToString();
+                    var lcDirectionTyp = item.ToString();
                     MoveDirection oDirectionObject = MoveDirection.None;
-                    Enum.TryParse<MoveDirection>(cDirectionTyp, out oDirectionObject);
+                    Enum.TryParse<MoveDirection>(lcDirectionTyp, out oDirectionObject);
                     bool lbIsFree = WayIsFree(oDirectionObject);
                     bool lbIsMark = PositionIsMark(moPosition, oDirectionObject);
 
                     Console.WriteLine($"Richtung  =   {oDirectionObject}   Frei = {lbIsFree}   Bekannkt = {lbIsMark} ");
 
-                    //// Whenn is don't mark go 
+                    // When is don't mark go 
                     if (lbIsFree && !lbIsMark && (oDirectionObject == loInFront))
                     {
                         //Step forward
@@ -281,7 +319,7 @@ namespace Maze_Client
                 SolveLeftHand(loLeftSide);
             }
 
-            // There is no front wall  :3
+            // There is no front wall  ::3
             if (lbWallNotInFront == true)
             {
                 // ueberprüfen ob schon gewesen           
@@ -312,7 +350,7 @@ namespace Maze_Client
         }
 
         /// <summary>
-        /// SolveRightHand
+        /// SolveRightHand. Solve the Maze-Labyrinth
         /// </summary>
         /// <param name="_moveDirection"></param>
         /// <returns></returns>
@@ -330,9 +368,9 @@ namespace Maze_Client
             // Have we reached the end ?   ::1
             if (mcState.Contains("Target"))
             {
-                return false;            }
-            
-            
+                return false;
+            }
+                        
             // There is not right wall   ::2
             if (lbWallNotRighSide == true)
             {
@@ -362,13 +400,11 @@ namespace Maze_Client
 
                 if (!lbPositonExit)
                 {
-                    var test = true;
+                    
                     mloPosition.Add(new Position { PosX = mnPosX, PosY = mnPosY });
                 }
                 else
-                {
-                    var test = true;
-
+                {                 
                     // Change the Search-Method --> new SolveLeftHand
                     LoRightSide = RotateDirection(LoRightSide, false);
                     Console.WriteLine("neu SolveLeftHand");
@@ -377,7 +413,6 @@ namespace Maze_Client
                     MoveMaze(LoRightSide);
 
                     SolveLeftHand(LoRightSide);
-
                 }
 
                 //Step forward
@@ -533,8 +568,7 @@ namespace Maze_Client
                 return bWayMark = false;
             }          
         }
-
-
+        
         /// <summary>
         /// cmdStart_Click.
         /// </summary>
@@ -542,19 +576,13 @@ namespace Maze_Client
         /// <param name="e"></param>
         private void cmdStart_Click(object sender, EventArgs e)
         {
-            // GetReset(); // aktivieren wenn immer ein Sicher Start gewünscht
+            // GetReset(); // aktivieren wenn immer ein Sicher Start gewünscht.
 
             mbRunningSolve = true;
 
             ThreadStart solveref = new ThreadStart(CallToSolveThread);
             Thread solveThread = new Thread(solveref);
-            solveThread.Start();
-         
-        }
-
-        public void stopThread()
-        {
-            mbRunningSolve = false;
+            solveThread.Start();         
         }
 
         /// <summary>
@@ -565,7 +593,6 @@ namespace Maze_Client
         private void cmdStop_Click(object sender, EventArgs e)
         {
             mbRunningSolve = false;
-            stopThread();
         }
         
         /// <summary>
@@ -668,10 +695,7 @@ namespace Maze_Client
                     dataStream.Close();
                 }
 
-                response.Close();
-
-                //ToDo  Aus Int den enum.Name rausfinden
-                
+                response.Close();                              
                              
                 // LOG: Aufzeichnung wenn ein Reset ausgeführt wird. Keine Rueckmeldung vom Server
                 if (PostURL.ToLower().Contains("reset")) { lcResponseFromServer += ".LOG: Es wurde ein Reset ausgeführt" + Environment.NewLine; }
@@ -754,8 +778,7 @@ namespace Maze_Client
                         llResponseList.Add(reader.Value.ToString());
                     }
                     else
-                    {
-                        /// ToDo  Debug   :: Console.WriteLine("Token: {0}", reader.TokenType);
+                    {                        
                     }
                 }
             }
@@ -823,9 +846,6 @@ namespace Maze_Client
             string cResponseData = null;
 
             cResponseData = RequestPOST(cPostData, cRequestUri);
-
-            // Log Informationen  ToDo
-            ///Thread ::    txtStatus.Text += cResponseData + Environment.NewLine;
 
             // Info sammeln
             GetState();
@@ -994,11 +1014,21 @@ namespace Maze_Client
 
         #endregion
 
+        /// <summary>
+        /// cmdReset_Click. Event for the Button cmdReset "Reset"
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cmdReset_Click(object sender, EventArgs e)
         {
             GetReset();
         }
 
+        /// <summary>
+        /// cmdNorth_Click. Event for the Button cmdNorth "North". one Step
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cmdNorth_Click(object sender, EventArgs e)
         {
             if (!(mcState.Contains("Target") || mcState.Contains("Failed"))) 
@@ -1007,7 +1037,11 @@ namespace Maze_Client
             }
         }
 
-
+        /// <summary>
+        /// cmdWest_Click. Event for the Button cmdWest "West". one Step
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cmdWest_Click(object sender, EventArgs e)
         {
             if (!(mcState.Contains("Target") || mcState.Contains("Failed")))
@@ -1016,6 +1050,11 @@ namespace Maze_Client
             }                 
         }
 
+        /// <summary>
+        /// cmdEast_Click. Event for the Button cmdEast "East". one Step
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cmdEast_Click(object sender, EventArgs e)
         {
             if (!(mcState.Contains("Target") || mcState.Contains("Failed")))
@@ -1024,6 +1063,11 @@ namespace Maze_Client
             }          
         }
 
+        /// <summary>
+        /// cmdSouth_Click. Event for the Button cmdSouth "South". one Step
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cmdSouth_Click(object sender, EventArgs e)
         {
             if (!(mcState.Contains("Target") || mcState.Contains("Failed")))

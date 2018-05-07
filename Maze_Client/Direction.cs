@@ -26,8 +26,10 @@ namespace Maze_Client
 
         public Boolean West { get; set; }
 
-
-        // ueberschreibe Base.ToString.  Für Log-Informationen zu erhalten
+        /// <summary>
+        /// ueberschreibe Base.ToString. Für mehr Log-Informationen zu erhalten
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             string strLogDirections = "North=" + North.ToString() + ", East=" + East.ToString() + ", South=" + South.ToString() + ", West=" + West.ToString();

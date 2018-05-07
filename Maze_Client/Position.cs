@@ -13,7 +13,7 @@ namespace Maze_Client
         public int PosY { get; set; }
 
         /// <summary>
-        /// ueberschreibe Base.ToString.  Für Log-Informationen zu erhalten
+        /// ueberschreibe Base.ToString.  Für mehr Log-Informationen zu erhalten
         /// </summary>
         /// <returns></returns>
         public override string ToString()
